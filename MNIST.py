@@ -4,7 +4,10 @@ from array import array
 import numpy as np
 
 
-def get_data(digits, dataset='training', directory='./MNIST_data'):
+DIGITS_ALL = set(range(10))
+
+
+def get_data(digits=DIGITS_ALL, dataset='training', directory='./MNIST_data'):
     """
     Get MNIST dataset
     @param dataset: 'training' or 'test'

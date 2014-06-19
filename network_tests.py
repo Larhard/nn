@@ -8,8 +8,8 @@ import json
 
 
 def test003():
-    # bpn = NeuralNetwork((2, 10, 1), layer_functions=(Tf.sgm, Tf.sgm))
-    bpn = NeuralNetwork((2, 50, 1), layer_functions=(Tf.sgm, Tf.sgm))
+    bpn = NeuralNetwork((2, 10, 10, 1), layer_functions=(Tf.sgm, Tf.sgm, Tf.sgm))
+    # bpn = NeuralNetwork((2, 50, 1), layer_functions=(Tf.sgm, Tf.sgm))
     # bpn = NeuralNetwork((2, 10, 1), layer_functions=(TF.tanh, TF.linear))
     # bpn = NeuralNetwork((2, 20, 1))
 
@@ -33,8 +33,11 @@ def test003():
     # condition = lambda k: 0.95 if 4 * abs(k[0]-0.5)+1.2 - abs(k[1]-0.5)*4 > 0.7 else 0.05
     # condition = lambda k: 0.05 if abs(k[0]-np.sin(k[1]*11))*2 - abs(k[1]-np.sin(k[1]*17))*2 > 0.1 else 0.95
     # condition = lambda k: 0.05 if abs(k[0]-k[1]) < 0.1 else 0.95
+    # condition = lambda k: 0.05 if abs(k[0]-k[1]) < 0.1 else 0.95
+    # condition = lambda k: 0.05 if abs(abs(k[0]-0.5) - abs(k[1]-0.5)) < 0.1 else 0.95
+    # condition = lambda k: 0.95 if abs(abs(k[0]-0.5) - abs(k[1]-0.5)) < 0.1 else 0.05
     # condition = lambda k: 0.05 if k[0] > k[1] * 0.5+np.sin(k[1] * 20)/8 + 0.25 else 0.95
-    # condition = lambda k: 0.05 if 0.03 < abs(k[0]-0.5)**2 + abs(k[1]-0.5)**2 < 0.17 else 0.95
+    # condition = lambda k: 0.05 if 0.01 < abs(k[0]-0.5)**2 + abs(k[1]-0.5)**2 < 0.04 or 0.075 < abs(k[0]-0.5)**2 + abs(k[1]-0.5)**2 < 0.17 else 0.95
     condition = lambda k: 0.95 if abs(k[0] - 0.3) ** 2 + abs(k[1] - 0.75) ** 2 < 0.04 or \
                                   abs(k[0] - 0.3) ** 2 + abs(k[1] - 0.25) ** 2 < 0.04 or \
                                   abs(k[0] - 0.65) ** 2 + abs(k[1] - 0.5) ** 2 < 0.07 else 0.05
@@ -42,7 +45,7 @@ def test003():
 
     def generate_sample_data():
         # sample_input = np.array([[rnd.randint(0, 100)/100, rnd.randint(0, 100)/100] for _ in range(100)])
-        sample_input = np.array([[rnd.randint(0, 100) / 100, rnd.randint(0, 100) / 100] for _ in range(300)])
+        sample_input = np.array([[rnd.randint(0, 100) / 100, rnd.randint(0, 100) / 100] for _ in range(600)])
         sample_target = np.array([[condition(k)] for k in sample_input])
         return sample_input, sample_target
 
@@ -66,29 +69,32 @@ def test003():
     plt.pause(0.01)
     # plt.show()
 
-    for i in range(train_iterations):
-        err = bpn.train_epoch(train_input, train_target, training_rate=0.02)
-        if i % 2500 == 0:
-            print("Iteration: {}\tError: {:0.6f}".format(i, err))
+    try:
+        for i in range(train_iterations):
+            err = bpn.train_epoch(train_input, train_target, training_rate=0.02)
+            if i % 250 == 0:
+                print("Iteration: {}\tError: {:0.6f}".format(i, err))
 
-            test_input = np.array([[p / 100.0, q / 100.0] for (p, q) in it.product(range(100), repeat=2)])
-            test_output = bpn.run(test_input)
-            for k in train_input:
-                test_output[(k[0] * 100 - 1) * 100 + k[1] * 100 - 1] = 0.5
-            image.set_data(test_output.reshape(100, 100))
-            plt.draw()
-            plt.pause(0.01)
+                test_input = np.array([[p / 100.0, q / 100.0] for (p, q) in it.product(range(100), repeat=2)])
+                test_output = bpn.run(test_input)
+                for k in train_input:
+                    test_output[(k[0] * 100 - 1) * 100 + k[1] * 100 - 1] = 0.5
+                image.set_data(test_output.reshape(100, 100))
+                plt.draw()
+                plt.pause(0.01)
 
-        if err <= train_error:
-            print("Minimum error reached at iteration {}".format(i))
-            break
+            if err <= train_error:
+                print("Minimum error reached at iteration {}".format(i))
+                break
 
-        if i % 10000 == 0:
-            train_input, train_target = generate_sample_data()
+            if i % 10000 == 0:
+                train_input, train_target = generate_sample_data()
+    except KeyboardInterrupt:
+        pass
 
     with open('test003_weights.json', 'w') as fd:
         json.dump([k.tolist() for k in bpn.weights], fd)
 
 
 if __name__ == '__main__':
-    test003()
+   test003()
