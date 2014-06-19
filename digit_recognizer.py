@@ -12,7 +12,7 @@ import sys
 import bmp
 
 
-def teacher(clear=False, config_file='digit_recognizer.pkl', iterations=10000):
+def teacher(clear=False, config_file='digit_recognizer.pkl', iterations=1000000000):
     config = {}
 
     if not clear:
@@ -23,7 +23,7 @@ def teacher(clear=False, config_file='digit_recognizer.pkl', iterations=10000):
         except FileNotFoundError:
             pass
 
-    config['layers'] = config.get('layers', [28*28, 20, 20, 10])
+    config['layers'] = config.get('layers', [28*28, 1000, 1000, 10])
 
     network = Bpn.NeuralNetwork(config['layers'])
 
@@ -34,7 +34,7 @@ def teacher(clear=False, config_file='digit_recognizer.pkl', iterations=10000):
     images, labels = MNIST.get_data()
     data_size = len(labels)
 
-    def generate_training_data(size=300):
+    def generate_training_data(size=100):
         t_set = [rnd.randint(0, data_size-1) for k in range(size)]
         t_images = np.array([
             images[k].reshape((functools.reduce(mul, images[k].shape, 1))) for k in t_set
@@ -53,11 +53,11 @@ def teacher(clear=False, config_file='digit_recognizer.pkl', iterations=10000):
     train_labels = None
     try:
         for i in range(iterations):
-            if i % 1000 == 0:
+            if i % 400 == 0:
                 train_images, train_labels = generate_training_data()
                 print("New training data loaded")
             error = network.train_epoch(train_images, train_labels)
-            if i % 100 == 0:
+            if i % 1 == 0:
                 print("Iteration: {:10} Error: {:10.6}".format(i, error))
     except KeyboardInterrupt:
         pass
@@ -94,8 +94,9 @@ def recognizer(paths, config_file='digit_recognizer.pkl'):
 
 
 if __name__ == '__main__':
+    clear = '-clear' in sys.argv
     if '-train' in sys.argv:
-        teacher(clear=False)
+        teacher(clear=clear)
     else:
         # recognizer(sys.argv[1:])
         recognizer(['test_image.bmp'])
