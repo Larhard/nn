@@ -1,4 +1,10 @@
 #!/usr/bin/python3
+
+TRAINING_RATE = 0.00001
+TRAINING_DATA_SIZE = 10
+TRAINING_RESET = 10
+HIDDEN_LAYERS = [512, 512, 2048, ]
+SAVE_FREQUENCY = 10000
 from mimetypes import init
 
 import MNIST
@@ -8,6 +14,7 @@ import numpy as np
 import functools
 import random as rnd
 from operator import mul
+import itertools as it
 import sys
 import bmp
 
@@ -23,7 +30,8 @@ def teacher(clear=False, config_file='digit_recognizer.pkl', iterations=10000000
         except FileNotFoundError:
             pass
 
-    config['layers'] = config.get('layers', [28*28, 1000, 1000, 10])
+    config['layers'] = config.get('layers', list(it.chain((28*28, ), HIDDEN_LAYERS, (10, ))))
+    print("layers : {}".format(config['layers']))
 
     network = Bpn.NeuralNetwork(config['layers'])
 
@@ -34,7 +42,7 @@ def teacher(clear=False, config_file='digit_recognizer.pkl', iterations=10000000
     images, labels = MNIST.get_data()
     data_size = len(labels)
 
-    def generate_training_data(size=100):
+    def generate_training_data(size=TRAINING_DATA_SIZE):
         t_set = [rnd.randint(0, data_size-1) for k in range(size)]
         t_images = np.array([
             images[k].reshape((functools.reduce(mul, images[k].shape, 1))) for k in t_set
@@ -51,21 +59,36 @@ def teacher(clear=False, config_file='digit_recognizer.pkl', iterations=10000000
 
     train_images = None
     train_labels = None
+    avg_error = None
+    tested_labels = [0]*10
+
+    def save_config(cfg):
+        config['weights'] = network.weights
+        with open(cfg, 'wb') as fd:
+            pickle.dump(config, fd)
+            print("config file saved ({})".format(cfg))
     try:
         for i in range(iterations):
-            if i % 400 == 0:
+            if i % TRAINING_RESET == 0:
                 train_images, train_labels = generate_training_data()
-                print("New training data loaded")
-            error = network.train_epoch(train_images, train_labels)
+                for label in train_labels:
+                    for idx, k in enumerate(label):
+                        if k:
+                            tested_labels[idx] += 1
+                print("New training data loaded: {}".format(tested_labels))
+            error = network.train_epoch(train_images, train_labels, training_rate=TRAINING_RATE)
+            if avg_error is None:
+                avg_error = error / TRAINING_DATA_SIZE
+            else:
+                avg_error = (avg_error * (SAVE_FREQUENCY - 1) + error / TRAINING_DATA_SIZE) / SAVE_FREQUENCY
             if i % 1 == 0:
-                print("Iteration: {:10} Error: {:10.6}".format(i, error))
+                print("Iteration: {:10} Error: {:10.6f} Average: {:10.10f}".format(i, error, avg_error))
+            if i % SAVE_FREQUENCY == 0 and i != 0:
+                save_config("backup_{}.pkl".format(avg_error))
     except KeyboardInterrupt:
         pass
 
-    config['weights'] = network.weights
-    with open(config_file, 'wb') as fd:
-        pickle.dump(config, fd)
-        print("config file saved")
+    save_config(config_file)
 
 
 def recognizer(paths, config_file='digit_recognizer.pkl'):
