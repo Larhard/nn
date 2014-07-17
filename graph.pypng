@@ -1,0 +1,6 @@
+#!/usr/bin/python2
+
+import progress_graph
+import sys
+
+sys.stdout.write(progress_graph.get_graph(show=False))
