@@ -19,7 +19,7 @@ import sys
 import bmp
 
 
-def teacher(clear=False, config_file='digit_recognizer.pkl', iterations=1000000000):
+def teacher(clear=False, config_file='digit_recognizer.pkl', iterations=1000000000, save=True):
     config = {}
 
     if not clear:
@@ -88,7 +88,8 @@ def teacher(clear=False, config_file='digit_recognizer.pkl', iterations=10000000
     except KeyboardInterrupt:
         pass
 
-    save_config(config_file)
+    if save:
+        save_config(config_file)
 
 
 def recognizer(paths, config_file='digit_recognizer.pkl'):
