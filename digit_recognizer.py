@@ -111,8 +111,8 @@ def recognizer(paths, config_file='digit_recognizer.pkl'):
         # print(image)
 
         result = network.run(image[None, :])
-        for i in range(len(result[0])):
-            print("{} : {:.6f}  ".format(i, result[0][i]), end='')
+        for i in sorted(enumerate(result[0]), key=lambda k: k[1], reverse=True):
+            print("{} : {:.6f}".format(i[0], i[1]))
         print()
 
 
