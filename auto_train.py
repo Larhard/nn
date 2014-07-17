@@ -10,6 +10,10 @@ def get_last_backup():
     return backup
 
 if __name__ == '__main__':
-    config_file = get_last_backup()
-    print("Config File: {}".format(config_file))
-    digit_recognizer.teacher(config_file=config_file, clear=False, save=False)
+    try:
+        while True:
+            config_file = get_last_backup()
+            print("Config File: {}".format(config_file))
+            digit_recognizer.teacher(config_file=config_file, clear=False, save=False, ignore_interrupt=False)
+    except KeyboardInterrupt:
+        pass

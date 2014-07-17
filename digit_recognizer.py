@@ -19,7 +19,7 @@ import sys
 import bmp
 
 
-def teacher(clear=False, config_file='digit_recognizer.pkl', iterations=1000000000, save=True):
+def teacher(clear=False, config_file='digit_recognizer.pkl', iterations=1000000000, save=True, ignore_interrupt=True):
     config = {}
 
     if not clear:
@@ -85,8 +85,9 @@ def teacher(clear=False, config_file='digit_recognizer.pkl', iterations=10000000
                 print("Iteration: {:10} Error: {:10.6f} Average: {:10.10f}".format(i, error, avg_error))
             if i % SAVE_FREQUENCY == 0 and i != 0:
                 save_config("backup_{}.pkl".format(avg_error))
-    except KeyboardInterrupt:
-        pass
+    except KeyboardInterrupt as e:
+        if not ignore_interrupt:
+            raise e
 
     if save:
         save_config(config_file)
