@@ -1,4 +1,6 @@
 *.pkl
+*.bmp
+*.png
 # Created by http://www.gitignore.io
 
 ### PyCharm ###
