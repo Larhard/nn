@@ -1,9 +1,9 @@
 #!/usr/bin/python3
 
-TRAINING_RATE = 0.00001
-TRAINING_DATA_SIZE = 10
-TRAINING_RESET = 10
-HIDDEN_LAYERS = [512, 512, 2048, ]
+TRAINING_RATE = 0.001
+TRAINING_DATA_SIZE = 100
+TRAINING_RESET = 100
+HIDDEN_LAYERS = []
 SAVE_FREQUENCY = 10000
 from mimetypes import init
 
@@ -49,8 +49,7 @@ def teacher(clear=False, config_file='digit_recognizer.pkl', iterations=10000000
         ], dtype=np.float)
 
         for i in range(size):
-            for j in range(t_images[i].shape[0]):
-                t_images[i][j] /= 256
+            t_images /= 255
 
         t_labels = np.zeros((size, 10))
         for i, k in enumerate(t_set):
@@ -97,6 +96,7 @@ def recognizer(paths, config_file='digit_recognizer.pkl'):
     with open(config_file, 'rb') as fd:
         config = pickle.load(fd)
         print("config file loaded")
+        print("shape : {}".format(config['layers']))
 
     network = Bpn.NeuralNetwork(config['layers'])
 
@@ -105,17 +105,16 @@ def recognizer(paths, config_file='digit_recognizer.pkl'):
         print("weights restored")
 
     for path in paths:
-        print("Path: {}".format(path))
-        image = bmp.load(path)
+        if isinstance(path, (np.ndarray)):
+            image = path
+        else:
+            print("Path: {}".format(path))
+            image = bmp.load(path)
+            image = np.flipud(1 - image / 255)
         image = image.reshape((functools.reduce(mul, image.shape)))
-        for i in range(len(image)):
-            image[i] = (255 - image[i]) / 255
         # print(image)
 
-        result = network.run(image[None, :])
-        for i in sorted(enumerate(result[0]), key=lambda k: k[1], reverse=True):
-            print("{} : {:.6f}".format(i[0], i[1]))
-        print()
+        return network.run(image[None, :])
 
 
 if __name__ == '__main__':
@@ -124,4 +123,7 @@ if __name__ == '__main__':
         teacher(clear=clear)
     else:
         # recognizer(sys.argv[1:])
-        recognizer(['test_image.bmp'])
+        result = recognizer(['test_image.bmp'])
+        for i in sorted(enumerate(result[0]), key=lambda k: k[1], reverse=True):
+            print("{} : {:.6f}".format(i[0], i[1]))
+        print()

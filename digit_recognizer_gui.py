@@ -1,124 +1,59 @@
-from gi.repository import Gtk, Gdk, GdkPixbuf
+#!/usr/bin/python3
+import random
+
+import numpy as np
+import matplotlib.pyplot as plt
+import argparse
+import sys
+import MNIST
+
+import bmp
+import digit_recognizer
 
 
-def recognizer():
-    class RecognizerWindow(Gtk.Window):
-        def __init__(self):
-            Gtk.Window.__init__(self, title="Digit Recognizer")
-            self.recognize_button = Gtk.Button("Recognize")
-            self.clear_button = Gtk.Button("Clear")
-            self.exit_button = Gtk.Button("Exit")
+class DigitRecognizerGui:
+    def change_active(self, idx):
+        if idx is not None:
+            self.active.imshow(self.images[idx].reshape(28, 28), cmap='gray')
+            result = digit_recognizer.recognizer([self.images[idx]])
+            for i in sorted(enumerate(result[0]), key=lambda k: k[1], reverse=True):
+                print("{} : {:.6f}".format(i[0], i[1]))
+            self.figure.canvas.draw()
 
-            self.recognize_button.connect('clicked', self.on_recognize_clicked)
-            self.clear_button.connect('clicked', self.on_clear_clicked)
-            self.exit_button.connect('clicked', Gtk.main_quit)
-            self.connect('delete-event', Gtk.main_quit)
+    def __init__(self, images=[]):
+        self.images = images
+        self.figure = plt.figure()
+        self.miniatures = []
+        self.mini_dict = {}
 
-            #
-            # Drawing area
-            #
-            self.drawing_area = Gtk.DrawingArea()
-            self.drawing_area.set_size_request(28*4, 28*4)
-            self.drawing_area.add_events(Gdk.EventMask.BUTTON_PRESS_MASK
-                                         | Gdk.EventMask.POINTER_MOTION_MASK
-                                         | Gdk.EventMask.POINTER_MOTION_HINT_MASK
-                                         | Gdk.EventMask.LEAVE_NOTIFY_MASK)
-            self.drawing_area.connect('draw', self.on_drawing_area_draw)
-            self.drawing_area.connect('button-press-event', self.on_drawing_area_button_pressed)
-            self.drawing_area.connect('motion-notify-event', self.on_drawing_area_motion_notify)
-            self.drawing_area.connect('configure-event', self.on_drawing_area_configure)
-            self.drawing_area_clicks = []
-            self.drawing_position_reset = True
-            self.drawing_area_image = None
+        mini_rows = int(len(self.images) / 20)+1
+        mini_cols = min(20, len(self.images))
 
-            #
-            # Stats labels
-            #
-            self.result_label = Gtk.Label("None")
-            self.stats_labels = [Gtk.Label("{} : ".format(i)) for i in range(10)]
-            self.stats_results = [Gtk.Label("0.000000") for i in range(10)]
+        for i in range(len(self.images)):
+            self.miniatures.append(self.figure.add_subplot(mini_rows+1, mini_cols, i + 1))
+            self.miniatures[-1].imshow(self.images[i].reshape(28, 28), cmap='gray')
+            self.mini_dict[self.miniatures[-1]] = i
+        self.active = self.figure.add_subplot(mini_rows+1, 1, mini_rows+1)
+        self.figure.canvas.mpl_connect('button_press_event',
+                                       lambda k: self.change_active(self.mini_dict.get(k.inaxes, None)))
 
-            #
-            # Objects placement
-            #
+    def show(self):
+        #self.figure.show()
+        plt.show()
 
-            # Main buttons
-            self.button_box = Gtk.VBox()
-            self.button_box.pack_start(self.recognize_button, False, False, 3)
-            self.button_box.pack_start(self.clear_button, False, False, 3)
-            self.button_box.pack_start(self.exit_button, False, False, 3)
 
-            # Stats labels
-            self.stats_table = Gtk.Grid()
-            self.stats_table.add(self.result_label)
-            for i in range(10):
-                self.stats_table.attach_next_to(self.stats_labels[i], self.result_label if i == 0 else self.stats_labels[i-1], Gtk.PositionType.BOTTOM, 1, 1)
-                self.stats_table.attach_next_to(self.stats_results[i], self.stats_labels[i], Gtk.PositionType.RIGHT, 1, 1)
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('files', nargs='*', help="list of files to recognize")
+    parser.add_argument('--mnist', help="count of random MNIST images", type=int)
+    args = parser.parse_args(sys.argv[1:])
+    images = [np.flipud(1 - bmp.load(k, floatize=True)) for k in args.files]
+    if args.mnist:
+        m_images, m_labels = MNIST.get_data()
+        random.shuffle(m_images)
+        images.extend(m_images[:args.mnist])
+    drg = DigitRecognizerGui(images=images)
+    drg.show()
 
-            # Final placement
-            self.main_box = Gtk.Box()
-            self.add(self.main_box)
-
-            self.main_box.pack_start(self.drawing_area, False, False, 3)
-            self.main_box.pack_start(self.stats_table, False, False, 3)
-            self.main_box.pack_start(self.button_box, False, False, 3)
-
-            #
-            # Final operations
-            #
-            self.show_all()
-
-        def on_drawing_area_configure(self, widget, event):
-            if not self.drawing_area_image:
-                self.drawing_area_image = Gdk.PixBuf(widget.get_window(), 28*4, 28*4)
-                # Gtk.draw_rectangle(self.drawing_area_pixmap, widget.get_style().white_gc, True, 0, 0, 28*4, 28*4)
-            return True
-
-        def on_drawing_area_draw(self, widget, cairo_context):
-            print("draw")
-            for x, y in self.drawing_area_clicks:
-                if x < 0:
-                    x = -x
-                    cairo_context.move_to(x-1, y)
-                cairo_context.line_to(x, y)
-            cairo_context.set_source_rgb(0, 0, 0)
-            cairo_context.stroke()
-            return False
-
-        def on_drawing_area_motion_notify(self, widget, event):
-            print("motion")
-            if event.is_hint:
-                state = 0
-                print(event.window.get_pointer())
-                _, x, y, state = event.window.get_pointer()
-                # x, y = event.window.get_pointer
-                # state = event.window.pointer_state
-            else:
-                x, y = event.x, event.y
-                state = event.state
-
-            if state & state.BUTTON1_MASK:
-                if self.drawing_position_reset:
-                    x = -x
-                    self.drawing_position_reset = False
-                self.drawing_area_clicks.append((x, y))
-                self.drawing_area.queue_draw()
-            else:
-                self.drawing_position_reset = True
-            return True
-
-        def on_drawing_area_button_pressed(self, widget, event):
-            print("click")
-            self.drawing_area_clicks.append((-event.x, event.y))
-            self.drawing_position_reset = False
-            self.drawing_area.queue_draw()
-            return True
-
-        def on_clear_clicked(self, widget):
-            print("clear")
-
-        def on_recognize_clicked(self, widget):
-            print("recognize")
-
-    window = RecognizerWindow()
-    Gtk.main()
+if __name__ == '__main__':
+    main()

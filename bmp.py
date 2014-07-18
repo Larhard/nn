@@ -18,7 +18,7 @@ def concat_bytes(args):
     return result
 
 
-def load(path, grayscale=True):
+def load(path, grayscale=True, floatize=False):
     with open(path, 'rb') as fd:
         magic_id, file_size, reserved_1, reserved_2, offset = struct.unpack('<HIHHI', fd.read(14))
         h_size, width, height, planes, bits_per_px, compression, image_size, x_px_per_meter, y_px_per_meter,\
@@ -29,4 +29,6 @@ def load(path, grayscale=True):
     merge_func = main_bytes if grayscale else concat_bytes
     bitmap = np.array([merge_func(bitmap_array[bytes_per_px*i:bytes_per_px*(i+1)]) for i in range(width*height)])
     bitmap = bitmap.reshape((height, width))
+    if floatize:
+        bitmap /= 255
     return bitmap
