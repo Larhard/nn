@@ -11,6 +11,14 @@ class TransferFunctions:
             return out * (1 - out)
 
     @staticmethod
+    def sgm2(x, derivative=False):
+        if not derivative:
+            return 1 / (1 + np.exp(5-x))
+        else:
+            out = TransferFunctions.sgm(x)
+            return out * (1 - out)
+
+    @staticmethod
     def linear(x, derivative=False):
         if not derivative:
             return x
