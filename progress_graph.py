@@ -20,11 +20,11 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 import io
 
-DIR = '/home/larhard/nn/'
+DIR = os.path.dirname(os.path.abspath(__file__))
 
-def get_graph(show=True):
+def get_graph(show=True, directory=DIR):
     figure = plt.figure()
-    data = [(os.stat(os.path.join(DIR, backup)).st_mtime, float(re.match('^backup_(\d+(\.\d+)?)\.pkl$', backup).group(1))) for backup in os.listdir(DIR) if re.match('^backup_(\d+(\.\d+)?)\.pkl$', backup)]
+    data = [(os.stat(os.path.join(directory, backup)).st_mtime, float(re.match('^backup_(\d+(\.\d+)?)\.pkl$', backup).group(1))) for backup in os.listdir(directory) if re.match('^backup_(\d+(\.\d+)?)\.pkl$', backup)]
     data.sort(reverse=True)
     #print(data)
     #print(list(zip(*data)))
