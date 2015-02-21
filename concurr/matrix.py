@@ -41,6 +41,8 @@ def matrix_multiply(p, q):
 
     """
 
+    assert p.dtype == np.float64
+    assert q.dtype == np.float64
     x, y = p.shape
     yy, z = q.shape
     assert (y == yy)
