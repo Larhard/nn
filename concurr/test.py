@@ -12,7 +12,7 @@ class ConcurrTests(unittest.TestCase):
         a = np.random.randn(20).astype(np.float64).reshape((4, 5))
         b = np.random.randn(20).astype(np.float64).reshape((5, 4))
         np_out = np.dot(a, b)
-        out = concurr.matrix_multiply(a, b)
+        out = concurr.matrix_multiply(a, b).get()
         numpy.testing.assert_array_almost_equal(out, np_out, 10)
 
     def test_multiply_big(self):
@@ -20,7 +20,7 @@ class ConcurrTests(unittest.TestCase):
         a = np.random.randn(x * y).astype(np.float64).reshape((x, y))
         b = np.random.randn(y * z).astype(np.float64).reshape((y, z))
         np_out = np.dot(a, b)
-        out = concurr.matrix_multiply(a, b)
+        out = concurr.matrix_multiply(a, b).get()
         numpy.testing.assert_array_almost_equal(out, np_out, 5)
 
     def test_multiply_transposed(self):
@@ -32,7 +32,7 @@ class ConcurrTests(unittest.TestCase):
 
         a = np.array(a)
         b = np.array(b)
-        out = concurr.matrix_multiply(a, b)
+        out = concurr.matrix_multiply(a, b).get()
         np_out = np.dot(a, b)
         numpy.testing.assert_array_almost_equal(out, np_out, 5)
 
@@ -41,7 +41,7 @@ class ConcurrTests(unittest.TestCase):
         a = np.random.randn(x * y).astype(np.float64).reshape((y, x))
         b = np.random.randn(y * z).astype(np.float64).reshape((y, z))
 
-        out = concurr.matrix_multiply_tn(a, b)
+        out = concurr.matrix_multiply_tn(a, b).get()
         np_out = np.dot(a.T, b)
         numpy.testing.assert_array_almost_equal(out, np_out, 5)
 
