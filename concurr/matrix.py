@@ -75,6 +75,19 @@ void matrix_sum(double *dest, double *src, double *val, int n)
 }
 
 __global__
+void matrix_mul(double *dest, double *src, double *val, int n)
+{
+    const int idx = (blockIdx.x * blockDim.x) + threadIdx.x;
+    const double value = *val;
+
+    if (idx < n) {
+        double tmp = src[idx];
+        tmp *= value;
+        dest[idx] = tmp;
+    }
+}
+
+__global__
 void matrix_transpose(double *odata, double *idata, int x, int y)
 {
     const int idx_x = (blockIdx.x * blockDim.x) + threadIdx.x;
@@ -94,6 +107,7 @@ cuda_matrix_transpose = cuda_matrix.get_function('matrix_transpose')
 
 cuda_matrix_add = cuda_matrix.get_function('matrix_add')
 cuda_matrix_sum = cuda_matrix.get_function('matrix_sum')
+cuda_matrix_mul = cuda_matrix.get_function('matrix_mul')
 
 
 def multiply(p, q):
@@ -202,6 +216,30 @@ def sum(matrix, value):
         value,
         np.int32(n),
         block=(block_x, 1, 1), grid=(grid_x, 1, 1)
+    )
+
+    return out
+
+
+def mul(matrix, value):
+    """
+    add scalar to matrix
+    """
+    if not isinstance(matrix, gpuarray.GPUArray):
+        matrix = gpuarray.to_gpu(np.ascontiguousarray(matrix))
+
+    n = functools.reduce(operator.mul, matrix.shape)
+
+    block, grid = concurr.utils.get_dims_1d(n)
+
+    out = gpuarray.GPUArray(matrix.shape, dtype=np.float64)
+    val = gpuarray.to_gpu(np.array(value, dtype=np.float64))
+
+    cuda_matrix_mul(
+        out, matrix,
+        val,
+        np.int32(n),
+        block=block, grid=grid
     )
 
     return out
