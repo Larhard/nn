@@ -10,13 +10,10 @@ import concurr
 class TransferFunctions:
     @staticmethod
     def sgm(x, derivative=False):
-        if isinstance(x, gpuarray.GPUArray):
-            x = x.get()
         if not derivative:
-            return 1 / (1 + np.exp(-x))
+            return concurr.sgm(x)
         else:
-            out = TransferFunctions.sgm(x)
-            return out * (1 - out)
+            return concurr.sgm_d(x).get()
 
     @staticmethod
     def sgm2(x, derivative=False):
@@ -110,11 +107,11 @@ class NeuralNetwork:
                     np.vstack((input_data.T, np.ones((1, input_cases)))))
             else:
                 layer_input = concurr.matrix_multiply(self.weights[index],
-                    np.vstack((self._layerOutput[-1], np.ones((1, input_cases)))))
+                    np.vstack((self._layerOutput[-1].get(), np.ones((1, input_cases)))))
             self._layerInput.append(layer_input)
             self._layerOutput.append(self.transfer_functions[index](layer_input))
 
-        return self._layerOutput[-1].T
+        return self._layerOutput[-1].get().T
 
     # TrainEpoch methods
     def train_epoch(self, input_data, target, training_rate=0.01):
@@ -128,7 +125,7 @@ class NeuralNetwork:
         for index in reversed(range(self.layer_count)):
             if index == self.layer_count - 1:
                 # Compare to expected result
-                output_delta = self._layerOutput[index] - target.T
+                output_delta = self._layerOutput[index].get() - target.T
                 error = np.sum(output_delta ** 2)
                 delta.append(output_delta * self.transfer_functions[index](self._layerInput[index], True))
             else:
@@ -144,7 +141,7 @@ class NeuralNetwork:
                 layer_output = np.vstack([input_data.T, np.ones([1, input_cases])])
             else:
                 layer_output = np.vstack(
-                    [self._layerOutput[index - 1], np.ones([1, self._layerOutput[index - 1].shape[1]])])
+                    [self._layerOutput[index - 1].get(), np.ones([1, self._layerOutput[index - 1].shape[1]])])
 
             weight_delta = np.sum(
                 layer_output[None, :, :].transpose(2, 0, 1) * delta[delta_index][None, :, :].transpose(2, 1, 0)
