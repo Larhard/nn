@@ -9,6 +9,8 @@ import pycuda.driver as drv
 from pycuda.compiler import SourceModule
 from pycuda import gpuarray
 
+import concurr.utils
+
 
 cuda_matrix = SourceModule("""
 #include <stdio.h>
@@ -72,10 +74,23 @@ void matrix_sum(double *dest, double *src, double *val, int n)
     }
 }
 
+__global__
+void matrix_transpose(double *odata, double *idata, int x, int y)
+{
+    const int idx_x = (blockIdx.x * blockDim.x) + threadIdx.x;
+    const int idx_y = (blockIdx.y * blockDim.y) + threadIdx.y;
+
+    if (idx_x < x && idx_y < y) {
+        double tmp = get2d(idata, idx_y, idx_x, x);
+        get2d(odata, idx_x, idx_y, y) = tmp;
+    }
+}
+
 """)
 
 cuda_matrix_multiply = cuda_matrix.get_function('matrix_multiply')
 cuda_matrix_multiply_tn = cuda_matrix.get_function('matrix_multiply_tn')
+cuda_matrix_transpose = cuda_matrix.get_function('matrix_transpose')
 
 cuda_matrix_add = cuda_matrix.get_function('matrix_add')
 cuda_matrix_sum = cuda_matrix.get_function('matrix_sum')
@@ -192,3 +207,20 @@ def sum(matrix, value):
     return out
 
 
+def transpose(idata):
+    if not isinstance(idata, gpuarray.GPUArray):
+        idata = gpuarray.to_gpu(np.ascontiguousarray(idata))
+
+    x, y = idata.shape
+
+    odata = gpuarray.GPUArray((y, x), dtype=np.float64)
+
+    block_dim, grid_dim = concurr.utils.get_dims_2d(x, y)
+
+    cuda_matrix_transpose(
+        odata, idata,
+        np.int32(x), np.int32(y),
+        block=block_dim, grid=grid_dim
+    )
+
+    return odata
