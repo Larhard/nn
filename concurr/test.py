@@ -84,6 +84,15 @@ class ConcurrTests(unittest.TestCase):
 
         numpy.testing.assert_array_almost_equal(out, np_out, 5)
 
+    def test_transpose(self):
+        x, y = 54, 33
+        a = np.random.randn(x * y).astype(np.float64).reshape((y, x))
+
+        np_out = a.T
+        out = concurr.matrix.transpose(a).get()
+
+        numpy.testing.assert_array_almost_equal(out, np_out, 5)
+
 
 if __name__ == '__main__':
     unittest.main()

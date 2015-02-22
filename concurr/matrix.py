@@ -262,9 +262,9 @@ def transpose(idata):
     if not isinstance(idata, gpuarray.GPUArray):
         idata = gpuarray.to_gpu(np.ascontiguousarray(idata))
 
-    x, y = idata.shape
+    y, x = idata.shape
 
-    odata = gpuarray.GPUArray((y, x), dtype=np.float64)
+    odata = gpuarray.GPUArray((x, y), dtype=np.float64)
 
     block_dim, grid_dim = concurr.utils.get_dims_2d(x, y)
 
@@ -282,7 +282,7 @@ def append_value_line(idata, value):
     appends row filled with value to the bottom of the matrix
     """
     if not isinstance(idata, gpuarray.GPUArray):
-        idata = gpuarray.to_gpu(idata)
+        idata = gpuarray.to_gpu(np.ascontiguousarray(idata))
 
     y, x = idata.shape
 
