@@ -127,11 +127,11 @@ class NeuralNetwork:
                 output_delta = concurr.matrix.sum(self._layerOutput[index], concurr.matrix.mul(concurr.matrix.transpose(target), -1))
                 error = gpuarray.sum(output_delta * output_delta)
                 error = float(error.get())
-                delta.append((output_delta * self.transfer_functions[index](self._layerInput[index], True)).get())
+                delta.append((output_delta * self.transfer_functions[index](self._layerInput[index], True)))
             else:
                 # Compare to following layer's delta
                 delta_pullback = concurr.matrix.multiply_tn(self.weights[index + 1], delta[-1])
-                delta.append((delta_pullback[:-1, :] * self.transfer_functions[index](self._layerInput[index], True)).get())
+                delta.append((delta_pullback[:-1, :] * self.transfer_functions[index](self._layerInput[index], True)))
 
         # Compute weight deltas
         for index in range(self.layer_count):
@@ -144,9 +144,9 @@ class NeuralNetwork:
                     [self._layerOutput[index - 1].get(), np.ones([1, self._layerOutput[index - 1].shape[1]])])
 
             weight_delta = np.sum(
-                layer_output[None, :, :].transpose(2, 0, 1) * delta[delta_index][None, :, :].transpose(2, 1, 0)
-                , axis=0)
-            self.weights[index] = concurr.matrix.sum(self.weights[index], -training_rate * weight_delta)
+                layer_output[None, :, :].transpose(2, 0, 1) * delta[delta_index].get()[None, :, :].transpose(2, 1, 0)
+                , axis=0)  # TODO
+            self.weights[index] = concurr.matrix.sum(self.weights[index], concurr.matrix.mul(weight_delta, -training_rate))
 
         return error
 
