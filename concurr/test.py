@@ -55,6 +55,14 @@ class ConcurrTests(unittest.TestCase):
         np_out = a + val
         numpy.testing.assert_array_almost_equal(out, np_out, 5)
 
+    def test_sum(self):
+        x, y = 10, 12
+        a = np.random.randn(x * y).astype(np.float64).reshape((y, x))
+        b = np.random.randn(x * y).astype(np.float64).reshape((y, x))
+
+        out = concurr.matrix_sum(a, b).get()
+        np_out = a + b
+        numpy.testing.assert_array_almost_equal(out, np_out, 5)
 
 
 if __name__ == '__main__':

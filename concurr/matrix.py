@@ -1,4 +1,8 @@
+import functools
+import operator
+
 import numpy as np
+import numpy.testing
 
 import pycuda.autoinit
 import pycuda.driver as drv
@@ -42,17 +46,29 @@ void matrix_multiply_tn(double *dest, double *p, double *q, int x, int y, int z)
 }
 
 __global__
-void matrix_add(double *dest, double *src, int x, int y, double* val)
+void matrix_add(double *dest, double *src, double *val, int n)
 {
-    const int idx_x = (blockIdx.x * blockDim.x) + threadIdx.x;
-    const int idx_y = (blockIdx.y * blockDim.y) + threadIdx.y;
+    const int idx = (blockIdx.x * blockDim.x) + threadIdx.x;
     const double value = *val;
 
-    if (idx_y < y && idx_x < x) {
-        double tmp = get2d(src, idx_y, idx_x, x);
+    if (idx < n) {
+        double tmp = src[idx];
+        // printf("%lf + %lf = %lf\\n", tmp, value, tmp + value);
         tmp += value;
-        get2d(dest, idx_y, idx_x, x) = 0;
-        get2d(dest, idx_y, idx_x, x) = tmp;
+        dest[idx] = tmp;
+    }
+}
+
+__global__
+void matrix_sum(double *dest, double *src, double *val, int n)
+{
+    const int idx = (blockIdx.x * blockDim.x) + threadIdx.x;
+
+    if (idx < n) {
+        double p = src[idx];
+        double q = val[idx];
+        double tmp = p + q;
+        dest[idx] = tmp;
     }
 }
 
@@ -62,6 +78,7 @@ cuda_matrix_multiply = cuda_matrix.get_function('matrix_multiply')
 cuda_matrix_multiply_tn = cuda_matrix.get_function('matrix_multiply_tn')
 
 cuda_matrix_add = cuda_matrix.get_function('matrix_add')
+cuda_matrix_sum = cuda_matrix.get_function('matrix_sum')
 
 
 def matrix_multiply(p, q):
@@ -122,26 +139,54 @@ def matrix_multiply_tn(p, q):
 
 
 def matrix_add(matrix, value):
+    """
+    add scalar to matrix
+    """
     if not isinstance(matrix, gpuarray.GPUArray):
         matrix = gpuarray.to_gpu(np.ascontiguousarray(matrix))
 
-    y, x = matrix.shape
+    n = functools.reduce(operator.mul, matrix.shape)
 
-    block_x = 32
-    block_y = 32
-    grid_x = (x - 1) // block_x + 1
-    grid_y = (y - 1) // block_y + 1
+    block_x = 1024
+    grid_x = (n - 1) // block_x + 1
 
-    out = gpuarray.GPUArray((y, x), dtype=np.float64)
-    val = gpuarray.to_gpu(np.array(value))
+    out = gpuarray.GPUArray(matrix.shape, dtype=np.float64)
+    val = gpuarray.to_gpu(np.array(value, dtype=np.float64))
 
     cuda_matrix_add(
         out, matrix,
-        np.int32(x), np.int32(y),
         val,
-        block=(block_x, block_y, 1), grid=(grid_x, grid_y, 1)
+        np.int32(n),
+        block=(block_x, 1, 1), grid=(grid_x, 1, 1)
     )
 
     # cuda_matrix_add(out, matrix, np.float64(value), np.int32(x), np.int32(y),
     #     block=(block_x, block_y, 1), grid=(grid_x, grid_y, 1))
+    return out
+
+
+def matrix_sum(matrix, value):
+    """
+    sum two matrices
+    """
+    if not isinstance(matrix, gpuarray.GPUArray):
+        matrix = gpuarray.to_gpu(np.ascontiguousarray(matrix))
+    if not isinstance(value, gpuarray.GPUArray):
+        value = gpuarray.to_gpu(np.ascontiguousarray(value))
+
+    n = functools.reduce(operator.mul, matrix.shape)
+    assert matrix.shape == value.shape
+
+    block_x = 1024
+    grid_x = (n - 1) // block_x + 1
+
+    out = gpuarray.GPUArray(matrix.shape, dtype=np.float64)
+
+    cuda_matrix_sum(
+        out, matrix,
+        value,
+        np.int32(n),
+        block=(block_x, 1, 1), grid=(grid_x, 1, 1)
+    )
+
     return out
