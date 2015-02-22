@@ -85,7 +85,7 @@ class NeuralNetwork:
                     np.vstack((input_data.T, np.ones((1, input_cases)))))
             else:
                 layer_input = concurr.matrix.multiply(self.weights[index],
-                    np.vstack((self._layerOutput[-1].get(), np.ones((1, input_cases)))))
+                    np.vstack((self._layerOutput[-1].get(), np.ones((1, input_cases)))))  # TODO
             self._layerInput.append(layer_input)
             self._layerOutput.append(self.transfer_functions[index](layer_input))
 
@@ -120,7 +120,7 @@ class NeuralNetwork:
                 layer_output = np.vstack([input_data.T, np.ones([1, input_cases])])
             else:
                 layer_output = np.vstack(
-                    [self._layerOutput[index - 1].get(), np.ones([1, self._layerOutput[index - 1].shape[1]])])
+                    [self._layerOutput[index - 1].get(), np.ones([1, self._layerOutput[index - 1].shape[1]])])  # TODO
 
             weight_delta = np.sum(
                 layer_output[None, :, :].transpose(2, 0, 1) * delta[delta_index].get()[None, :, :].transpose(2, 1, 0)
