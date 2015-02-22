@@ -134,7 +134,7 @@ class NeuralNetwork:
             else:
                 # Compare to following layer's delta
                 delta_pullback = concurr.matrix_multiply_tn(self.weights[index + 1], delta[-1])
-                delta.append(delta_pullback[:-1, :] * self.transfer_functions[index](self._layerInput[index], True))
+                delta.append(delta_pullback.get()[:-1, :] * self.transfer_functions[index](self._layerInput[index], True))
 
         # Compute weight deltas
         for index in range(self.layer_count):
