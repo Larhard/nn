@@ -1,5 +1,7 @@
 import numpy as np
 
+import concurr
+
 
 class TransferFunctions:
     @staticmethod
@@ -90,9 +92,11 @@ class NeuralNetwork:
         # Run
         for index in range(self.layer_count):
             if index == 0:
-                layer_input = self.weights[0].dot(np.vstack([input_data.T, np.ones([1, input_cases])]))
+                layer_input = concurr.matrix_multiply(self.weights[0],
+                    np.vstack((input_data.T, np.ones((1, input_cases)))))
             else:
-                layer_input = self.weights[index].dot(np.vstack([self._layerOutput[-1], np.ones([1, input_cases])]))
+                layer_input = concurr.matrix_multiply(self.weights[index],
+                    np.vstack((self._layerOutput[-1], np.ones((1, input_cases)))))
             self._layerInput.append(layer_input)
             self._layerOutput.append(self.transfer_functions[index](layer_input))
 
@@ -115,7 +119,7 @@ class NeuralNetwork:
                 delta.append(output_delta * self.transfer_functions[index](self._layerInput[index], True))
             else:
                 # Compare to following layer's delta
-                delta_pullback = self.weights[index + 1].T.dot(delta[-1])
+                delta_pullback = concurr.matrix_multiply(self.weights[index + 1].T, delta[-1])
                 delta.append(delta_pullback[:-1, :] * self.transfer_functions[index](self._layerInput[index], True))
 
         # Compute weight deltas
