@@ -2,6 +2,7 @@ import pycuda.autoinit
 
 import numpy as np
 from pycuda import curandom
+from pycuda import gpuarray
 
 import concurr
 
@@ -9,6 +10,8 @@ import concurr
 class TransferFunctions:
     @staticmethod
     def sgm(x, derivative=False):
+        if isinstance(x, gpuarray.GPUArray):
+            x = x.get()
         if not derivative:
             return 1 / (1 + np.exp(-x))
         else:
@@ -17,6 +20,8 @@ class TransferFunctions:
 
     @staticmethod
     def sgm2(x, derivative=False):
+        if isinstance(x, gpuarray.GPUArray):
+            x = x.get()
         if not derivative:
             return 1 / (1 + np.exp(5-x))
         else:
@@ -25,6 +30,8 @@ class TransferFunctions:
 
     @staticmethod
     def linear(x, derivative=False):
+        if isinstance(x, gpuarray.GPUArray):
+            x = x.get()
         if not derivative:
             return x
         else:
@@ -32,6 +39,8 @@ class TransferFunctions:
 
     @staticmethod
     def gaussian(x, derivative=False):
+        if isinstance(x, gpuarray.GPUArray):
+            x = x.get()
         if not derivative:
             return np.exp(-x**2)
         else:
@@ -39,6 +48,8 @@ class TransferFunctions:
 
     @staticmethod
     def tanh(x, derivative=False):
+        if isinstance(x, gpuarray.GPUArray):
+            x = x.get()
         if not derivative:
             return np.tanh(x)
         else:
