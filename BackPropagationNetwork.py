@@ -17,16 +17,6 @@ class TransferFunctions:
             return concurr.functions.sgm_d(x)
 
     @staticmethod
-    def sgm2(x, derivative=False):
-        if isinstance(x, gpuarray.GPUArray):
-            x = x.get()
-        if not derivative:
-            return 1 / (1 + np.exp(5-x))
-        else:
-            out = TransferFunctions.sgm(x)
-            return out * (1 - out)
-
-    @staticmethod
     def linear(x, derivative=False):
         if not derivative:
             return x
@@ -41,15 +31,6 @@ class TransferFunctions:
             return concurr.functions.gaussian(x)
         else:
             return concurr.functions.gaussian_d(x)
-
-    @staticmethod
-    def tanh(x, derivative=False):
-        if isinstance(x, gpuarray.GPUArray):
-            x = x.get()
-        if not derivative:
-            return np.tanh(x)
-        else:
-            return 1.0 - np.tanh(x)**2
 
 
 class NeuralNetwork:
