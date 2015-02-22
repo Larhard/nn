@@ -25,8 +25,6 @@ class TransferFunctions:
 
     @staticmethod
     def gaussian(x, derivative=False):
-        if isinstance(x, gpuarray.GPUArray):
-            x = x.get()
         if not derivative:
             return concurr.functions.gaussian(x)
         else:
