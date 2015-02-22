@@ -5,15 +5,16 @@ from pycuda import curandom
 from pycuda import gpuarray
 
 import concurr
+import concurr.functions
 
 
 class TransferFunctions:
     @staticmethod
     def sgm(x, derivative=False):
         if not derivative:
-            return concurr.sgm(x)
+            return concurr.functions.sgm(x)
         else:
-            return concurr.sgm_d(x).get()
+            return concurr.functions.sgm_d(x)
 
     @staticmethod
     def sgm2(x, derivative=False):
@@ -27,8 +28,6 @@ class TransferFunctions:
 
     @staticmethod
     def linear(x, derivative=False):
-        if isinstance(x, gpuarray.GPUArray):
-            x = x.get()
         if not derivative:
             return x
         else:
@@ -39,9 +38,9 @@ class TransferFunctions:
         if isinstance(x, gpuarray.GPUArray):
             x = x.get()
         if not derivative:
-            return np.exp(-x**2)
+            return concurr.functions.gaussian(x)
         else:
-            return -2 * x * np.exp(-x**2)
+            return concurr.functions.gaussian_d(x)
 
     @staticmethod
     def tanh(x, derivative=False):
@@ -127,11 +126,11 @@ class NeuralNetwork:
                 # Compare to expected result
                 output_delta = self._layerOutput[index].get() - target.T
                 error = np.sum(output_delta ** 2)
-                delta.append(output_delta * self.transfer_functions[index](self._layerInput[index], True))
+                delta.append(output_delta * self.transfer_functions[index](self._layerInput[index], True).get())
             else:
                 # Compare to following layer's delta
                 delta_pullback = concurr.matrix_multiply_tn(self.weights[index + 1], delta[-1])
-                delta.append(delta_pullback.get()[:-1, :] * self.transfer_functions[index](self._layerInput[index], True))
+                delta.append(delta_pullback.get()[:-1, :] * self.transfer_functions[index](self._layerInput[index], True).get())
 
         # Compute weight deltas
         for index in range(self.layer_count):
