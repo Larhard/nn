@@ -117,10 +117,15 @@ class NeuralNetwork:
             delta_index = self.layer_count - 1 - index
 
             if index == 0:
-                layer_output = np.vstack([input_data.T, np.ones([1, input_cases])])
+                layer_output = concurr.matrix.append_value_line(
+                    concurr.matrix.transpose(input_data),
+                    1
+                ).get()
             else:
-                layer_output = np.vstack(
-                    [self._layerOutput[index - 1].get(), np.ones([1, self._layerOutput[index - 1].shape[1]])])  # TODO
+                layer_output = concurr.matrix.append_value_line(
+                    self._layerOutput[index - 1],
+                    1
+                ).get()
 
             weight_delta = np.sum(
                 layer_output[None, :, :].transpose(2, 0, 1) * delta[delta_index].get()[None, :, :].transpose(2, 1, 0)
