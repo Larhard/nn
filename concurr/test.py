@@ -14,6 +14,14 @@ class ConcurrTests(unittest.TestCase):
         out = concurr.matrix_multiply(a, b)
         numpy.testing.assert_array_almost_equal(out, np_out, 10)
 
+    def test_multiply_big(self):
+        x, y, z = 511, 512, 513
+        a = np.random.randn(x * y).astype(np.float64).reshape((x, y))
+        b = np.random.randn(y * z).astype(np.float64).reshape((y, z))
+        np_out = np.dot(a, b)
+        out = concurr.matrix_multiply(a, b)
+        numpy.testing.assert_array_almost_equal(out, np_out, 5)
+
 
 if __name__ == '__main__':
     unittest.main()

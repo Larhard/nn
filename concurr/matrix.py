@@ -48,7 +48,13 @@ def matrix_multiply(p, q):
     assert (y == yy)
 
     out = np.zeros((x, z), dtype=np.float64)
+
+    block_x = 32
+    block_y = 32
+    grid_x = (z - 1) // block_x + 1
+    grid_y = (x - 1) // block_y + 1
+    # print("{} x {} x {} : {}x{} / {}x{}".format(x, y, z, block_x, block_y, grid_x, grid_y))
     cuda_matrix_multiply(drv.Out(out), drv.In(p), drv.In(q),
         np.int32(x), np.int32(y), np.int32(z),
-        block=(32, 32, 1), grid=(1, 1, 1))
+        block=(block_x, block_y, 1), grid=(grid_x, grid_y, 1))
     return out
