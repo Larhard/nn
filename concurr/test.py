@@ -60,7 +60,6 @@ class ConcurrTests(unittest.TestCase):
         a = np.random.randn(x * y).astype(np.float64).reshape((y, x))
 
         val = random.random()
-        print(val)
 
         out = concurr.matrix.mul(a, val).get()
         np_out = a * val
@@ -73,6 +72,16 @@ class ConcurrTests(unittest.TestCase):
 
         out = concurr.matrix.sum(a, b).get()
         np_out = a + b
+        numpy.testing.assert_array_almost_equal(out, np_out, 5)
+
+    def test_append_value_line(self):
+        x, y = 10, 12
+        x, y = 2, 3
+        a = np.random.randn(x * y).astype(np.float64).reshape((y, x))
+        b = np.ones((1, x))
+        np_out = np.vstack((a, b))
+        out = concurr.matrix.append_value_line(a, 1).get()
+
         numpy.testing.assert_array_almost_equal(out, np_out, 5)
 
 

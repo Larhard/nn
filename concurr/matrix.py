@@ -99,6 +99,18 @@ void matrix_transpose(double *odata, double *idata, int x, int y)
     }
 }
 
+__global__
+void matrix_append_value(double *odata, double *idata, double *val, int n, int m)
+{
+    const int idx = (blockIdx.x * blockDim.x) + threadIdx.x;
+
+    const double value = idx < n ? idata[idx] : *val;
+
+    if (idx < m) {
+        odata[idx] = value;
+    }
+}
+
 """)
 
 cuda_matrix_multiply = cuda_matrix.get_function('matrix_multiply')
@@ -108,6 +120,7 @@ cuda_matrix_transpose = cuda_matrix.get_function('matrix_transpose')
 cuda_matrix_add = cuda_matrix.get_function('matrix_add')
 cuda_matrix_sum = cuda_matrix.get_function('matrix_sum')
 cuda_matrix_mul = cuda_matrix.get_function('matrix_mul')
+cuda_matrix_append_value = cuda_matrix.get_function('matrix_append_value')
 
 
 def multiply(p, q):
@@ -259,6 +272,32 @@ def transpose(idata):
         odata, idata,
         np.int32(x), np.int32(y),
         block=block_dim, grid=grid_dim
+    )
+
+    return odata
+
+
+def append_value_line(idata, value):
+    """
+    appends row filled with value to the bottom of the matrix
+    """
+    if not isinstance(idata, gpuarray.GPUArray):
+        idata = gpuarray.to_gpu(idata)
+
+    y, x = idata.shape
+
+    odata = gpuarray.GPUArray((y + 1, x), dtype=np.float64)
+    val = gpuarray.to_gpu(np.array(value, dtype=np.float64))
+
+    n = x * y
+    m = n + x
+
+    block, grid = concurr.utils.get_dims_1d(m)
+
+    cuda_matrix_append_value(
+        odata, idata, val,
+        np.int32(n), np.int32(m),
+        block=block, grid=grid
     )
 
     return odata
