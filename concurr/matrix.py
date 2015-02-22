@@ -81,7 +81,7 @@ cuda_matrix_add = cuda_matrix.get_function('matrix_add')
 cuda_matrix_sum = cuda_matrix.get_function('matrix_sum')
 
 
-def matrix_multiply(p, q):
+def multiply(p, q):
     """
 
          y         z           z
@@ -115,7 +115,7 @@ def matrix_multiply(p, q):
     return out
 
 
-def matrix_multiply_tn(p, q):
+def multiply_tn(p, q):
     assert p.dtype == np.float64
     assert q.dtype == np.float64
     y, x = p.shape
@@ -138,7 +138,7 @@ def matrix_multiply_tn(p, q):
     return out
 
 
-def matrix_add(matrix, value):
+def add(matrix, value):
     """
     add scalar to matrix
     """
@@ -165,7 +165,7 @@ def matrix_add(matrix, value):
     return out
 
 
-def matrix_sum(matrix, value):
+def sum(matrix, value):
     """
     sum two matrices
     """
@@ -190,3 +190,5 @@ def matrix_sum(matrix, value):
     )
 
     return out
+
+

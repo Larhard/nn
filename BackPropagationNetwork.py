@@ -4,7 +4,7 @@ import numpy as np
 from pycuda import curandom
 from pycuda import gpuarray
 
-import concurr
+import concurr.matrix
 import concurr.functions
 
 
@@ -102,10 +102,10 @@ class NeuralNetwork:
         # Run
         for index in range(self.layer_count):
             if index == 0:
-                layer_input = concurr.matrix_multiply(self.weights[0],
+                layer_input = concurr.matrix.multiply(self.weights[0],
                     np.vstack((input_data.T, np.ones((1, input_cases)))))
             else:
-                layer_input = concurr.matrix_multiply(self.weights[index],
+                layer_input = concurr.matrix.multiply(self.weights[index],
                     np.vstack((self._layerOutput[-1].get(), np.ones((1, input_cases)))))
             self._layerInput.append(layer_input)
             self._layerOutput.append(self.transfer_functions[index](layer_input))
@@ -129,7 +129,7 @@ class NeuralNetwork:
                 delta.append(output_delta * self.transfer_functions[index](self._layerInput[index], True).get())
             else:
                 # Compare to following layer's delta
-                delta_pullback = concurr.matrix_multiply_tn(self.weights[index + 1], delta[-1])
+                delta_pullback = concurr.matrix.multiply_tn(self.weights[index + 1], delta[-1])
                 delta.append(delta_pullback.get()[:-1, :] * self.transfer_functions[index](self._layerInput[index], True).get())
 
         # Compute weight deltas
@@ -145,7 +145,7 @@ class NeuralNetwork:
             weight_delta = np.sum(
                 layer_output[None, :, :].transpose(2, 0, 1) * delta[delta_index][None, :, :].transpose(2, 1, 0)
                 , axis=0)
-            self.weights[index] = concurr.matrix_sum(self.weights[index], -training_rate * weight_delta)
+            self.weights[index] = concurr.matrix.sum(self.weights[index], -training_rate * weight_delta)
 
         return error
 
