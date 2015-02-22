@@ -124,13 +124,14 @@ class NeuralNetwork:
         for index in reversed(range(self.layer_count)):
             if index == self.layer_count - 1:
                 # Compare to expected result
-                output_delta = self._layerOutput[index].get() - target.T
-                error = np.sum(output_delta ** 2)
-                delta.append(output_delta * self.transfer_functions[index](self._layerInput[index], True).get())
+                output_delta = concurr.matrix.sum(self._layerOutput[index], concurr.matrix.mul(concurr.matrix.transpose(target), -1))
+                error = gpuarray.sum(output_delta * output_delta)
+                error = float(error.get())
+                delta.append((output_delta * self.transfer_functions[index](self._layerInput[index], True)).get())
             else:
                 # Compare to following layer's delta
                 delta_pullback = concurr.matrix.multiply_tn(self.weights[index + 1], delta[-1])
-                delta.append(delta_pullback.get()[:-1, :] * self.transfer_functions[index](self._layerInput[index], True).get())
+                delta.append((delta_pullback[:-1, :] * self.transfer_functions[index](self._layerInput[index], True)).get())
 
         # Compute weight deltas
         for index in range(self.layer_count):
