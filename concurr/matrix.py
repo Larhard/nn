@@ -3,6 +3,7 @@ import numpy as np
 import pycuda.autoinit
 import pycuda.driver as drv
 from pycuda.compiler import SourceModule
+from pycuda import gpuarray
 
 
 cuda_matrix = SourceModule("""
@@ -46,6 +47,10 @@ def matrix_multiply(p, q):
     x, y = p.shape
     yy, z = q.shape
     assert (y == yy)
+    if not isinstance(p, gpuarray.GPUArray):
+        p = gpuarray.to_gpu(p.copy())
+    if not isinstance(q, gpuarray.GPUArray):
+        q = gpuarray.to_gpu(q.copy())
 
     out = np.zeros((x, z), dtype=np.float64)
 
@@ -54,7 +59,7 @@ def matrix_multiply(p, q):
     grid_x = (z - 1) // block_x + 1
     grid_y = (x - 1) // block_y + 1
     # print("{} x {} x {} : {}x{} / {}x{}".format(x, y, z, block_x, block_y, grid_x, grid_y))
-    cuda_matrix_multiply(drv.Out(out), drv.In(p), drv.In(q),
+    cuda_matrix_multiply(drv.Out(out), p, q,
         np.int32(x), np.int32(y), np.int32(z),
         block=(block_x, block_y, 1), grid=(grid_x, grid_y, 1))
     return out
