@@ -82,10 +82,18 @@ class NeuralNetwork:
         for index in range(self.layer_count):
             if index == 0:
                 layer_input = concurr.matrix.multiply(self.weights[0],
-                    np.vstack((input_data.T, np.ones((1, input_cases)))))
+                    concurr.matrix.append_value_line(
+                        concurr.matrix.transpose(input_data),
+                        1
+                    )
+                )
             else:
                 layer_input = concurr.matrix.multiply(self.weights[index],
-                    np.vstack((self._layerOutput[-1].get(), np.ones((1, input_cases)))))  # TODO
+                    concurr.matrix.append_value_line(
+                        self._layerOutput[-1],
+                        1
+                    )
+                )
             self._layerInput.append(layer_input)
             self._layerOutput.append(self.transfer_functions[index](layer_input))
 
@@ -120,15 +128,15 @@ class NeuralNetwork:
                 layer_output = concurr.matrix.append_value_line(
                     concurr.matrix.transpose(input_data),
                     1
-                ).get()
+                )
             else:
                 layer_output = concurr.matrix.append_value_line(
                     self._layerOutput[index - 1],
                     1
-                ).get()
+                )
 
             weight_delta = np.sum(
-                layer_output[None, :, :].transpose(2, 0, 1) * delta[delta_index].get()[None, :, :].transpose(2, 1, 0)
+                layer_output.get()[None, :, :].transpose(2, 0, 1) * delta[delta_index].get()[None, :, :].transpose(2, 1, 0)
                 , axis=0)  # TODO
             self.weights[index] = concurr.matrix.sum(self.weights[index], concurr.matrix.mul(weight_delta, -training_rate))
 
