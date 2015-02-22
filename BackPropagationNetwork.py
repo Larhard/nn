@@ -1,4 +1,7 @@
+import pycuda.autoinit
+
 import numpy as np
+from pycuda import curandom
 
 import concurr
 
@@ -77,7 +80,7 @@ class NeuralNetwork:
 
         # Create weight arrays
         for (p, q) in zip(layer_size[:-1], layer_size[1:]):
-            self.weights.append(np.random.normal(scale=0.1, size=(q, p + 1)))
+            self.weights.append(curandom.rand((q, p + 1), dtype=np.float64))
 
     # Run method
     def run(self, input_data):
@@ -119,7 +122,7 @@ class NeuralNetwork:
                 delta.append(output_delta * self.transfer_functions[index](self._layerInput[index], True))
             else:
                 # Compare to following layer's delta
-                delta_pullback = concurr.matrix_multiply(self.weights[index + 1].T, delta[-1])
+                delta_pullback = concurr.matrix_multiply_tn(self.weights[index + 1], delta[-1])
                 delta.append(delta_pullback[:-1, :] * self.transfer_functions[index](self._layerInput[index], True))
 
         # Compute weight deltas
@@ -135,7 +138,7 @@ class NeuralNetwork:
             weight_delta = np.sum(
                 layer_output[None, :, :].transpose(2, 0, 1) * delta[delta_index][None, :, :].transpose(2, 1, 0)
                 , axis=0)
-            self.weights[index] -= training_rate * weight_delta
+            self.weights[index] = concurr.matrix_sum(self.weights[index], -training_rate * weight_delta)
 
         return error
 
