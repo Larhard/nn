@@ -1,3 +1,4 @@
+import random
 import unittest
 
 import numpy as np
@@ -33,6 +34,25 @@ class ConcurrTests(unittest.TestCase):
         b = np.array(b)
         out = concurr.matrix_multiply(a, b)
         np_out = np.dot(a, b)
+        numpy.testing.assert_array_almost_equal(out, np_out, 5)
+
+    def test_multiply_tn(self):
+        x, y, z = 10, 3, 100
+        a = np.random.randn(x * y).astype(np.float64).reshape((y, x))
+        b = np.random.randn(y * z).astype(np.float64).reshape((y, z))
+
+        out = concurr.matrix_multiply_tn(a, b)
+        np_out = np.dot(a.T, b)
+        numpy.testing.assert_array_almost_equal(out, np_out, 5)
+
+    def test_add(self):
+        x, y = 10, 12
+        a = np.random.randn(x * y).astype(np.float64).reshape((y, x))
+
+        val = random.random()
+
+        out = concurr.matrix_add(a, val).get()
+        np_out = a + val
         numpy.testing.assert_array_almost_equal(out, np_out, 5)
 
 
