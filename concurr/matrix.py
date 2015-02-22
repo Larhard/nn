@@ -48,9 +48,9 @@ def matrix_multiply(p, q):
     yy, z = q.shape
     assert (y == yy)
     if not isinstance(p, gpuarray.GPUArray):
-        p = gpuarray.to_gpu(p.copy())
+        p = gpuarray.to_gpu(np.ascontiguousarray(p))
     if not isinstance(q, gpuarray.GPUArray):
-        q = gpuarray.to_gpu(q.copy())
+        q = gpuarray.to_gpu(np.ascontiguousarray(q))
 
     out = np.zeros((x, z), dtype=np.float64)
 
