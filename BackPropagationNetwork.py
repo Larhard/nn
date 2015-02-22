@@ -110,7 +110,7 @@ class NeuralNetwork:
             self._layerInput.append(layer_input)
             self._layerOutput.append(self.transfer_functions[index](layer_input))
 
-        return self._layerOutput[-1].get().T
+        return concurr.matrix.transpose(self._layerOutput[-1])
 
     # TrainEpoch methods
     def train_epoch(self, input_data, target, training_rate=0.01):

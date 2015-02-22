@@ -77,6 +77,7 @@ def test003():
 
                 test_input = np.array([[p / 100.0, q / 100.0] for (p, q) in it.product(range(100), repeat=2)])
                 test_output = bpn.run(test_input)
+                test_output = test_output.get()
                 for k in train_input:
                     test_output[(k[0] * 100 - 1) * 100 + k[1] * 100 - 1] = 0.5
                 image.set_data(test_output.reshape(100, 100))
