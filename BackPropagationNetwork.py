@@ -135,9 +135,7 @@ class NeuralNetwork:
                     1
                 )
 
-            weight_delta = np.sum(
-                layer_output.get()[None, :, :].transpose(2, 0, 1) * delta[delta_index].get()[None, :, :].transpose(2, 1, 0)
-                , axis=0)  # TODO
+            weight_delta = concurr.matrix.cart_mul_sum(layer_output, delta[delta_index])
             self.weights[index] = concurr.matrix.sum(self.weights[index], concurr.matrix.mul(weight_delta, -training_rate))
 
         return error
