@@ -93,6 +93,18 @@ class ConcurrTests(unittest.TestCase):
 
         numpy.testing.assert_array_almost_equal(out, np_out, 5)
 
+    def test_cart_mul_sum(self):
+        x, y, z = 4, 3, 2
+        a = np.random.randn(x * y).astype(np.float64).reshape((x, y))
+        b = np.random.randn(z * y).astype(np.float64).reshape((z, y))
+
+        np_out = np.sum(
+            a[None, :, :].transpose(2, 0, 1) * b[None, :, :].transpose(2, 1, 0)
+            , axis=0
+        )
+        out = concurr.matrix.cart_mul_sum(a, b).get()
+        numpy.testing.assert_array_almost_equal(out, np_out, 5)
+
 
 if __name__ == '__main__':
     unittest.main()

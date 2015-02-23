@@ -111,6 +111,25 @@ void matrix_append_value(double *odata, double *idata, double *val, int n, int m
     }
 }
 
+__global__
+void matrix_cart_mul_sum(double *odata, double *p, double *q, int x, int y, int z)
+{
+    const int idx_x = (blockIdx.x * blockDim.x) + threadIdx.x;
+    const int idx_y = (blockIdx.y * blockDim.y) + threadIdx.y;
+
+    if (idx_x < x && idx_y < z) {
+        double tmp = 0;
+        double tp;
+        double tq;
+        for (int i = 0; i < y; ++i) {
+            tp = get2d(p, idx_x, i, y);
+            tq = get2d(q, idx_y, i, y);
+            tmp += tp * tq;
+        }
+        get2d(odata, idx_y, idx_x, x) = tmp;
+    }
+}
+
 """)
 
 cuda_matrix_multiply = cuda_matrix.get_function('matrix_multiply')
@@ -121,7 +140,7 @@ cuda_matrix_add = cuda_matrix.get_function('matrix_add')
 cuda_matrix_sum = cuda_matrix.get_function('matrix_sum')
 cuda_matrix_mul = cuda_matrix.get_function('matrix_mul')
 cuda_matrix_append_value = cuda_matrix.get_function('matrix_append_value')
-
+cuda_cart_mul_sum = cuda_matrix.get_function('matrix_cart_mul_sum')
 
 def multiply(p, q):
     """
@@ -300,4 +319,24 @@ def append_value_line(idata, value):
         block=block, grid=grid
     )
 
+    return odata
+
+
+def cart_mul_sum(p, q):
+    if not isinstance(p, gpuarray.GPUArray):
+        p = gpuarray.to_gpu(np.ascontiguousarray(p))
+    if not isinstance(q, gpuarray.GPUArray):
+        q = gpuarray.to_gpu(np.ascontiguousarray(q))
+    x, y = p.shape
+    z, yy = q.shape
+    assert y == yy
+    odata = gpuarray.GPUArray((z, x), dtype=np.float64)
+
+    block, grid = concurr.utils.get_dims_2d(x, z)
+
+    cuda_cart_mul_sum(
+        odata, p, q,
+        np.int32(x), np.int32(y), np.int32(z),
+        block=block, grid=grid
+    )
     return odata
